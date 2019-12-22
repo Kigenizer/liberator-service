@@ -10,31 +10,32 @@
   [name]
   (System/getenv name))
 
-(defn convert-dates 
+(defn convert-dates
   "Convert dates from miliseconds to java.sql.Timestamp object"
   [date1 date2]
-  (hash-map 
+  (hash-map
    :starting_date (java.sql.Timestamp. date1)
    :ending_date (java.sql.Timestamp. date2)))
 
-(defn process-promotion 
+(defn process-promotion
   "Merge a promotion map with new dates from convert-dates function"
   [promotion]
   (merge promotion
     (convert-dates (:starting_date promotion) (:ending_date promotion))))
 
 
-;; Database configuration data
+;; Database configuration data. This is basic configuration and assuming that we are on localhost
+;; For more specific configuration you will have to provide other parameters
 
 (def db {:subprotocol "postgresql"
-         :subname (get-environment-var "CLOJUCHIPS_DB_URL")
+         :subname (get-environment-var "CLOJUCHIPS_DB_NAME")
          :user (get-environment-var "CLOJUCHIPS_DB_USER")
          :password (get-environment-var "CLOJUCHIPS_DB_PASS")})
 
 
 ;; Generic operations
 
-(defn read-all-items 
+(defn read-all-items
   "Read all rows from any given entity"
   [table]
   (sql/query db [(str "select * from " table)]))
@@ -55,10 +56,10 @@
   "Update an item with an id provided by the client"
   [id table item]
   (if (= table "promotion")
-    (sql/update! 
-     db 
-     (keyword table) 
-     (process-promotion (parse-string (str item) true)) 
+    (sql/update!
+     db
+     (keyword table)
+     (process-promotion (parse-string (str item) true))
      [(str "id=" id)])
     (sql/update! db (keyword table) (parse-string (str item) true) [(str "id=" id)])))
 
